@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>¡Atina la Velocidad! — Juego de Física</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0a0e17; 
+      --card:#0d1423; 
+      --accent:#ff2d75; 
+      --accent2:#00f0ff; 
+      --muted:#a0aec0; 
+      --glass: rgba(13, 20, 35, 0.6);
+      --success:#38b04a;
+      --warning:#f6ad55;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #070a15 0%, #12182d 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+    #starfield {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .wrap{
+      max-width:1100px;
+      margin:20px auto;
+      padding:0 16px;
+      position: relative;
+      z-index: 2;
+    }
+    header{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      margin-bottom:16px;
+      animation: fadeIn 0.8s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .logo{
+      width:56px;
+      height:56px;
+      border-radius:14px;
+      background: linear-gradient(135deg, #ff2d75, #ff6b6b, #00f0ff);
+      display:grid;
+      place-items:center;
+      font-weight:800;
+      font-family: 'Orbitron', monospace;
+      font-size:20px;
+      color:#0a0e17;
+      box-shadow: 0 0 20px rgba(255,45,117,0.6);
+    }
+    h1{
+      font-family: 'Orbitron', monospace;
+      font-size:24px;
+      font-weight:700;
+      background: linear-gradient(to right, #ff2d75, #00f0ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: 1px;
+    }
+    .subtitle{
+      font-size:14px;
+      color:var(--muted);
+      margin-top:4px;
+    }
+    .layout{
+      display:grid;
+      grid-template-columns:440px 1fr;
+      gap:20px;
+    }
+    @media (max-width: 900px){
+      .layout{grid-template-columns:1fr;}
+    }
+    .card{
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius:16px;
+      padding:20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .controls{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+    label{
+      display:flex;
+      justify-content:space-between;
+      font-size:14px;
+      color:var(--muted);
+      font-weight:500;
+    }
+    input[type=range]{
+      width:100%;
+      height:6px;
+      background:#1a2235;
+      border-radius:3px;
+      outline:none;
+      -webkit-appearance:none;
+    }
+    input[type=range]::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      background:var(--accent2);
+      cursor:pointer;
+      box-shadow: 0 0 8px var(--accent2);
+    }
+    .btn-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:8px;
+    }
+    .btn{
+      flex:1;
+      min-width:90px;
+      padding:10px;
+      border:none;
+      border-radius:10px;
+      font-weight:700;
+      font-size:14px;
+      cursor:pointer;
+      transition: all 0.2s ease;
+      font-family: 'Inter', sans-serif;
+      color:#0a0e17;
+    }
+    .btn:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .btn:active{
+      transform: translateY(0);
+    }
+    .btn-play{ background: linear-gradient(to right, #ff2d75, #ff6b6b); }
+    .btn-step{ background: #4fd1c5; }
+    .btn-reset{ background: #a0aec0; }
+    .btn-record{ background: #ed8936; }
+    .btn-challenge{ background: linear-gradient(to right, #00f0ff, #00b8ff); color:#0a0e17; }
+    .btn-hint{ background: #805ad5; color: white; }
+
+    canvas{
+      background: #090f1a;
+      border-radius:16px;
+      width:100%;
+      height:320px;
+      display:block;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.7);
+    }
+
+    .stats{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:16px;
+    }
+    .stat{
+      background: rgba(0,0,0,0.2);
+      padding:8px 12px;
+      border-radius:10px;
+      font-size:13px;
+      font-weight:600;
+    }
+
+    #feedback{
+      text-align:center;
+      padding:14px;
+      border-radius:12px;
+      font-weight:700;
+      font-size:16px;
+      margin-top:16px;
+      background: rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+
+    .scoreboard{
+      display:flex;
+      justify-content:space-between;
+      margin-top:12px;
+      font-weight:700;
+      color: var(--accent2);
+      font-size:15px;
+    }
+
+    .leaderboard, .hint-box {
+      margin-top:20px;
+      background: rgba(0,0,0,0.2);
+      padding:14px;
+      border-radius:12px;
+    }
+    .leaderboard h4, .hint-box h4 {
+      margin-bottom:10px;
+      color: var(--accent2);
+      font-size:15px;
+    }
+    .leaderboard ol {
+      padding-left:20px;
+      font-size:13px;
+    }
+    .leaderboard li {
+      margin-bottom:4px;
+    }
+    .hint-content {
+      display: none;
+      margin-top:10px;
+      padding:10px;
+      background: rgba(0, 240, 255, 0.1);
+      border-radius:8px;
+      font-family: monospace;
+      font-size:14px;
+      white-space: pre-line;
+      color: #e0f7ff;
+    }
+
+    .particle{
+      position:absolute;
+      pointer-events:none;
+      z-index:10;
+    }
+  </style>
+</head>
+<body>
+  <!-- Fondo de estrellas -->
+  <canvas id="starfield"></canvas>
+
+  <div class="wrap">
+    <header>
+      <div class="logo">⚡</div>
+      <div>
+        <h1>¡ATINA LA VELOCIDAD!</h1>
+        <div class="subtitle">Haz que m₂ quede detenido tras la colisión elástica</div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <div class="card">
+        <div class="scoreboard">
+          <div>Puntuación: <span id="score">0</span></div>
+          <div>Nivel: <span id="level">1</span></div>
+        </div>
+
+        <h3 style="margin:16px 0 12px; font-weight:700; color:#00f0ff;">Controles</h3>
+        <div class="controls">
+          <div>
+            <label>masa 1 (kg) <span id="m1val">2.00</span></label>
+            <input id="m1" type="range" min="0.5" max="6" step="0.1" value="2" disabled>
+          </div>
+          <div>
+            <label>masa 2 (kg) <span id="m2val">1.00</span></label>
+            <input id="m2" type="range" min="0.5" max="6" step="0.1" value="1" disabled>
+          </div>
+          <div>
+            <label>velocidad inicial 1 (px/frame) <span id="v1val">0.00</span></label>
+            <input id="v1" type="range" min="-6" max="6" step="0.1" value="0">
+          </div>
+          <div>
+            <label>velocidad inicial 2 (px/frame) <span id="v2val">-1.00</span></label>
+            <input id="v2" type="range" min="-6" max="6" step="0.1" value="-1" disabled>
+          </div>
+
+          <div class="btn-row">
+            <button id="play" class="btn btn-play">▶ Jugar</button>
+            <button id="step" class="btn btn-step">⏭ Paso</button>
+            <button id="reset" class="btn btn-reset">⟲ Reiniciar</button>
+            <button id="new-challenge" class="btn btn-challenge">🎲 Nuevo reto</button>
+          </div>
+
+          <button id="show-hint" class="btn btn-hint">❓ Mostrar fórmula</button>
+          <div class="hint-box">
+            <h4>Consejo de Física</h4>
+            <div class="hint-content" id="hint-content">
+              Para que v₂ final = 0 tras una colisión elástica:
+
+              v₁ = ((m₁ - m₂) / (2·m₁)) · v₂
+
+              ¡Ajusta v₁ usando esta fórmula!
+            </div>
+          </div>
+
+          <div id="feedback">
+            🎯 Ajusta v₁ y haz clic en "Jugar"
+          </div>
+
+          <div class="leaderboard">
+            <h4>🏆 Mejores Puntajes</h4>
+            <ol id="leaderboard-list">
+              <!-- Se llena con JS -->
+            </ol>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <h4 style="margin-bottom:10px; font-weight:600;">Indicadores</h4>
+          <div class="stats">
+            <div class="stat">p = <span id="momentum">–</span></div>
+            <div class="stat">E = <span id="energy">–</span></div>
+            <div class="stat">v₁ = <span id="v1s">–</span></div>
+            <div class="stat">v₂ = <span id="v2s">–</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <canvas id="scene" width="800" height="320"></canvas>
+        <div style="display:flex;justify-content:space-between;margin-top:12px;color:var(--muted);font-size:13px;">
+          <span>Tiempo: <span id="tframe">0</span></span>
+          <span>Impactos: <span id="hits">0</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === ESTRELLAS DE FONDO ===
+    const starCanvas = document.getElementById('starfield');
+    const starCtx = starCanvas.getContext('2d');
+    starCanvas.width = window.innerWidth;
+    starCanvas.height = window.innerHeight;
+
+    const stars = [];
+    const starCount = 150;
+    for (let i = 0; i < starCount; i++) {
+      stars.push({
+        x: Math.random() * starCanvas.width,
+        y: Math.random() * starCanvas.height,
+        size: Math.random() * 1.5,
+        opacity: Math.random() * 0.8 + 0.2,
+        twinkleSpeed: Math.random() * 0.02 + 0.005
+      });
+    }
+
+    function animateStars() {
+      starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+      stars.forEach(star => {
+        star.opacity += Math.sin(Date.now() * star.twinkleSpeed) * 0.01;
+        star.opacity = Math.max(0.2, Math.min(1, star.opacity));
+        starCtx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+        starCtx.beginPath();
+        starCtx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        starCtx.fill();
+      });
+      requestAnimationFrame(animateStars);
+    }
+    animateStars();
+    window.addEventListener('resize', () => {
+      starCanvas.width = window.innerWidth;
+      starCanvas.height = window.innerHeight;
+    });
+
+    // === AUDIO ===
+    const ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(frequency = 440, duration = 0.1, type = 'sine', volume = 0.1) {
+      const oscillator = ctxAudio.createOscillator();
+      const gainNode = ctxAudio.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(ctxAudio.destination);
+      oscillator.type = type;
+      oscillator.frequency.value = frequency;
+      gainNode.gain.value = volume;
+      oscillator.start();
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctxAudio.currentTime + duration);
+      oscillator.stop(ctxAudio.currentTime + duration);
+    }
+
+    // === CANVAS PRINCIPAL ===
+    const canvas = document.getElementById('scene');
+    const ctx = canvas.getContext('2d');
+
+    // === DOM ===
+    const m1s = document.getElementById('m1');
+    const m2s = document.getElementById('m2');
+    const v1s = document.getElementById('v1');
+    const v2s = document.getElementById('v2');
+
+    const m1val = document.getElementById('m1val');
+    const m2val = document.getElementById('m2val');
+    const v1val = document.getElementById('v1val');
+    const v2val = document.getElementById('v2val');
+
+    const playBtn = document.getElementById('play');
+    const stepBtn = document.getElementById('step');
+    const resetBtn = document.getElementById('reset');
+    const newChallengeBtn = document.getElementById('new-challenge');
+    const feedbackEl = document.getElementById('feedback');
+    const showHintBtn = document.getElementById('show-hint');
+    const hintContent = document.getElementById('hint-content');
+
+    const momentumEl = document.getElementById('momentum');
+    const energyEl = document.getElementById('energy');
+    const v1sEl = document.getElementById('v1s');
+    const v2sEl = document.getElementById('v2s');
+    const tframeEl = document.getElementById('tframe');
+    const hitsEl = document.getElementById('hits');
+    const scoreEl = document.getElementById('score');
+    const levelEl = document.getElementById('level');
+    const leaderboardList = document.getElementById('leaderboard-list');
+
+    // === Estado del juego ===
+    let m1 = 2, m2 = 1, v1 = 0, v2 = -1, r1 = 22, r2 = 22;
+    let x1 = 150, x2 = canvas.width - 150;
+    let playing = false, frame = 0, hits = 0, gameActive = true;
+    let score = 0, level = 1;
+    let particles = [];
+    let failedAttempts = 0;
+
+    // === Leaderboard ===
+    function saveScore(name = "Jugador") {
+      const scores = JSON.parse(localStorage.getItem('elasticCollisionScores') || '[]');
+      scores.push({ name, score: Math.floor(score), date: new Date().toLocaleDateString() });
+      scores.sort((a, b) => b.score - a.score);
+      const top5 = scores.slice(0, 5);
+      localStorage.setItem('elasticCollisionScores', JSON.stringify(top5));
+      updateLeaderboard();
+    }
+
+    function updateLeaderboard() {
+      const scores = JSON.parse(localStorage.getItem('elasticCollisionScores') || '[]');
+      leaderboardList.innerHTML = '';
+      if (scores.length === 0) {
+        leaderboardList.innerHTML = '<li>Aún no hay puntajes</li>';
+        return;
+      }
+      scores.forEach(entry => {
+        const li = document.createElement('li');
+        li.textContent = `${entry.name}: ${entry.score}`;
+        leaderboardList.appendChild(li);
+      });
+    }
+
+    // === Funciones auxiliares ===
+    function updateLabels(){
+      m1val.textContent = parseFloat(m1s.value).toFixed(2);
+      m2val.textContent = parseFloat(m2s.value).toFixed(2);
+      v1val.textContent = parseFloat(v1s.value).toFixed(2);
+      v2val.textContent = parseFloat(v2s.value).toFixed(2);
+    }
+
+    function setStateFromControls(){
+      m1 = parseFloat(m1s.value); m2 = parseFloat(m2s.value);
+      v1 = parseFloat(v1s.value); v2 = parseFloat(v2s.value);
+    }
+
+    function resetSimulation(){
+      setStateFromControls();
+      x1 = 150; x2 = canvas.width - 150;
+      frame = 0; hits = 0;
+      tframeEl.textContent = frame;
+      hitsEl.textContent = hits;
+      playing = false;
+      playBtn.textContent = '▶ Jugar';
+      playBtn.className = 'btn btn-play';
+      drawScene();
+    }
+
+    function createParticles(x, y, color = '#ff2d75', count = 20) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: x,
+          y: y,
+          size: Math.random() * 4 + 1,
+          speedX: (Math.random() - 0.5) * 6,
+          speedY: (Math.random() - 0.5) * 6,
+          color: color,
+          life: 30 + Math.random() * 20
+        });
+      }
+    }
+
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.speedX;
+        p.y += p.speedY;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.globalAlpha = p.life / 50;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    function drawBall(x, r, color, label, mass, vel, isGlow = false) {
+      if (isGlow) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 20;
+      }
+      const grad = ctx.createRadialGradient(x - 8, 160 - r/2, 2, x, 160, r);
+      grad.addColorStop(0, color);
+      grad.addColorStop(1, '#0a0e17');
+      ctx.beginPath();
+      ctx.arc(x, 160, r, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 13px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${label}`, x, 160 - r - 10);
+      ctx.font = '600 12px Inter';
+      ctx.fillText(`${mass} kg`, x, 160 - r - 2);
+      ctx.fillText(`v=${vel.toFixed(2)}`, x, 160 + r + 14);
+    }
+
+    function drawScene() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Fondo con líneas de movimiento
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.08)';
+      ctx.setLineDash([5, 10]);
+      for (let y = 60; y < canvas.height; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      // Pista
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.fillRect(40, 155, canvas.width - 80, 10);
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
+      ctx.fillRect(40, 159, canvas.width - 80, 2);
+
+      // Dibujar partículas detrás
+      drawParticles();
+
+      // Bolas
+      drawBall(x1, r1, '#ff2d75', 'm₁', m1, v1, Math.abs(v1) > 0.5);
+      drawBall(x2, r2, '#00f0ff', 'm₂', m2, v2, Math.abs(v2) > 0.5);
+
+      // Indicadores
+      const pTotal = (m1 * v1 + m2 * v2).toFixed(2);
+      const eTotal = (0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2).toFixed(2);
+      momentumEl.textContent = pTotal;
+      energyEl.textContent = eTotal;
+      v1sEl.textContent = v1.toFixed(2);
+      v2sEl.textContent = v2.toFixed(2);
+    }
+
+    function setupChallenge() {
+      level = Math.min(10, Math.floor(score / 3) + 1);
+      levelEl.textContent = level;
+
+      const base = 0.5 + (level - 1) * 0.3;
+      m1 = parseFloat((base + Math.random() * (2 + level * 0.5)).toFixed(1));
+      m2 = parseFloat((base + Math.random() * (2 + level * 0.5)).toFixed(1));
+      v2 = parseFloat((-2 - level*0.3 + Math.random() * (4 + level*0.6)).toFixed(1));
+      v1 = 0;
+
+      m1s.value = m1;
+      m2s.value = m2;
+      v1s.value = v1;
+      v2s.value = v2;
+      updateLabels();
+      resetSimulation();
+      gameActive = true;
+      feedbackEl.textContent = '🎯 ¡Ajusta v₁ y juega!';
+      feedbackEl.style.color = '#a0aec0';
+    }
+
+    function step() {
+      if (!gameActive) return;
+      frame++; tframeEl.textContent = frame;
+      x1 += v1; x2 += v2;
+      updateParticles();
+
+      // Paredes
+      if (x1 - r1 < 40) { x1 = 40 + r1; v1 = -v1; playSound(200, 0.1, 'square', 0.05); }
+      if (x2 + r2 > canvas.width - 40) { x2 = canvas.width - 40 - r2; v2 = -v2; playSound(220, 0.1, 'square', 0.05); }
+
+      // Colisión
+      if (Math.abs(x1 - x2) <= r1 + r2) {
+        const v1f = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2);
+        const v2f = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2);
+        v1 = v1f; v2 = v2f;
+
+        const overlap = (r1 + r2) - Math.abs(x1 - x2);
+        if (x1 < x2) { x1 -= overlap/2; x2 += overlap/2; } 
+        else { x1 += overlap/2; x2 -= overlap/2; }
+
+        hits++; hitsEl.textContent = hits;
+        createParticles((x1 + x2)/2, 160, '#ffffff', 30);
+        playSound(600, 0.15, 'sine', 0.2);
+
+        setTimeout(() => {
+          const error = Math.abs(v2);
+          if (error < 0.12) {
+            const points = Math.max(1, Math.round((0.12 - error) * 100));
+            score += points;
+            scoreEl.textContent = Math.floor(score);
+            feedbackEl.textContent = '🎉 ¡IMPACTO PERFECTO!';
+            feedbackEl.style.color = '#38b04a';
+            playSound(800, 0.3, 'sine', 0.3);
+            failedAttempts = 0;
+          } else {
+            feedbackEl.textContent = `💥 v₂ = ${v2.toFixed(2)}. ¡Casi!`;
+            feedbackEl.style.color = '#f6ad55';
+            playSound(300, 0.2, 'sawtooth', 0.15);
+            failedAttempts++;
+            // Mostrar pista tras 2 fallos
+            if (failedAttempts >= 2) {
+              hintContent.style.display = 'block';
+            }
+          }
+          gameActive = false;
+          playing = false;
+          playBtn.textContent = '▶ Jugar';
+          playBtn.className = 'btn btn-play';
+        }, 120);
+      }
+      drawScene();
+    }
+
+    function gameLoop() {
+      if (playing) step();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // === Eventos ===
+    [m1s,m2s,v1s,v2s].forEach(inp => inp.addEventListener('input', updateLabels));
+    playBtn.addEventListener('click', () => {
+      if (!gameActive) { 
+        // Guardar puntuación al comenzar nuevo reto
+        if (score > 0) saveScore();
+        setupChallenge(); 
+        return; 
+      }
+      playing = !playing;
+      playBtn.textContent = playing ? '⏸ Pausar' : '▶ Jugar';
+      playBtn.className = playing ? 'btn btn-warning' : 'btn btn-play';
+    });
+    stepBtn.addEventListener('click', () => { if (gameActive) step(); });
+    resetBtn.addEventListener('click', resetSimulation);
+    newChallengeBtn.addEventListener('click', () => {
+      if (score > 0) saveScore();
+      setupChallenge();
+    });
+    showHintBtn.addEventListener('click', () => {
+      hintContent.style.display = hintContent.style.display === 'block' ? 'none' : 'block';
+      showHintBtn.textContent = hintContent.style.display === 'block' ? '❌ Ocultar fórmula' : '❓ Mostrar fórmula';
+    });
+
+    // === Iniciar ===
+    updateLeaderboard();
+    setupChallenge();
+    gameLoop();
+  </script>
+</body>
+</html>
